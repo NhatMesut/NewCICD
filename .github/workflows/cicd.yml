@@ -19,5 +19,5 @@ jobs:
           port: 22
           rm: true
           source: "*"
-          target: "/www/wwwroot/nhat.id.vn"
+          target: "/www/wwwroot/nhat.id.vn/"
 
