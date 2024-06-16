@@ -1,23 +1,49 @@
-name: Deployment
+name: CI/CD for WordPress
 
 on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
-  deployment:
+  build:
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@master
-      - name: copy file via ssh key
-        uses: appleboy/scp-action@master
-        with:
-          host: 103.142.24.58
-          username: root
-          key: ${{ secrets.SSH_KEY }}
-          port: 22
-          rm: true
-          source: "*"
-          target: "/www/wwwroot/nhat.id.vn/Test"
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Deploy to Server via SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: 103.142.24.58
+          SSH_USERNAME: root
+          DEPLOY_PATH: /www/wwwroot/nhat.id.vn"
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "103.142.24.58" >> ~/.ssh/known_hosts
+          rsync -avz --exclude '.git*' --exclude 'node_modules' . $rootE@$SSH_HOST:103.142.24.58
